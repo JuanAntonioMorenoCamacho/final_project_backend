@@ -368,7 +368,7 @@ app.get('/users/search', async (req, res) => {
  * /users/{id}:
  *   put:
  *     summary: Actualiza un usuario
- *     description: Actualiza nombre y correo electrónico del usuario especificado por ID.
+ *     description: Actualiza el usuario especificado por ID.
  *     parameters:
  *       - in: path
  *         name: id
@@ -386,9 +386,12 @@ app.get('/users/search', async (req, res) => {
  *               nombre:
  *                 type: string
  *                 example: Juan Pérez
- *               email:
+ *               correo:
  *                 type: string
  *                 example: juan@example.com
+ *               telefono:
+ *                 type: string
+ *                 example: Juan Pérez
  *     responses:
  *       200:
  *         description: Usuario actualizado correctamente

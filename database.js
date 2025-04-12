@@ -22,10 +22,6 @@ async function testConnection() {
         connection = await pool.getConnection();
         console.log('conexión a MSQL establecida correctamente');
 
-        // Hacer una consulta simple
-        const [row] = await connection.query('SELECT 1 + 1 AS solution');
-        console.log('Resultado de prueba:', row[0].solution);
-
         return true;
     }
         catch (error) {
