@@ -2,7 +2,7 @@ const mysql = require ('mysql2/promise');
 // Carga las variables de entorno .env
 require('dotenv').config ();
 
-// Exrae las variables de conexion de process.env
+// Extrae las variables de conexion de process.env
 const { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
 // Configuracion del pool de conexion
@@ -15,7 +15,7 @@ const pool = mysql.createPool({
     connectionLimit: 10,
     queueLimit: 0
 });
-// Funcion para probar la conexión
+// Metodo para probar la conexión
 async function testConnection() {
     let connection;
     try {

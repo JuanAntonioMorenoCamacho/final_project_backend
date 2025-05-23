@@ -1,4 +1,4 @@
-// swagger.js
+// swagger
 const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
@@ -16,8 +16,20 @@ const swaggerOptions = {
         url: 'http://localhost:3000', // URL de la API
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [{
+      bearerAuth: [],
+    }],
   },
-  apis: ['./app.js'], // Ruta al archivo donde están tus rutas (en este caso el archivo principal)
+  apis: ['./app.js'], // Ruta al archivo principal
 };
 
 // Creamos el SwaggerSpec a partir de la configuración

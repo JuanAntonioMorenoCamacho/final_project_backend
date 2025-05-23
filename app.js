@@ -4,14 +4,15 @@ const { pool, testConnection } = require('./database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const { swaggerUi, swaggerSpec } = require('./swagger');
+const authMiddleware = require('./authMiddleware');
 
-// Middleware para parsear JSON
+// Middleware para interpretar JSON
 app.use(express.json());
 
 // Ruta para acceder a la documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Ruta de prueba
+// Ruta de prueba para ver si el servidor funciona correctamente
 app.get('/', (req, res) => {
     res.send('servidor funcionando correctamente');
 });
@@ -38,6 +39,8 @@ app.get('/test-db', async (req, res) => {
  * /users:
  *   get:
  *     summary: Obtener todos los usuarios
+ *     security:
+ *       - bearerAuth: []
  *     description: Retorna una lista completa de todos los usuarios registrados en la base de datos.
  *     responses:
  *       200:
@@ -78,7 +81,7 @@ app.get('/test-db', async (req, res) => {
  *                   type: string
  *                   example: Error del servidor
  */
-app.get('/users', async (req, res) => {
+app.get('/users', authMiddleware, async (req, res) => {
     try {
       const [rows] = await pool.query('SELECT * FROM usuarios');
   
@@ -161,7 +164,7 @@ app.get('/users', async (req, res) => {
  *                   type: string
  *                   example: Error del servidor
  */
-app.get('/users/search', async (req, res) => {
+app.get('/users/search', authMiddleware, async (req, res) => {
     try {
       const { nombre, correo, profesional } = req.query;
   
@@ -202,13 +205,12 @@ app.get('/users/search', async (req, res) => {
     }
   });
 
-
 /**
  * @swagger
  * /users:
  *   post:
- *     summary: Crear un nuevo usuario
- *     description: Crea un nuevo usuario con los datos proporcionados en el cuerpo de la solicitud.
+ *     summary: Crear nuevo usuario
+ *     tags: [Usuarios]
  *     requestBody:
  *       required: true
  *       content:
@@ -221,22 +223,35 @@ app.get('/users/search', async (req, res) => {
  *               - correo
  *               - profesional
  *               - mensaje
+ *               - disponibilidad
+ *               - tarifa
+ *               - ciudad
  *             properties:
  *               nombre:
  *                 type: string
  *                 example: Juan Pérez
  *               teléfono:
  *                 type: string
- *                 example: 600123456
+ *                 example: +56912345678
  *               correo:
  *                 type: string
- *                 example: juan.perez@gmail.com
+ *                 format: email
+ *                 example: juan.perez@email.com
  *               profesional:
  *                 type: string
- *                 example: electricista
+ *                 example: Psicólogo
  *               mensaje:
  *                 type: string
- *                 example: Instalar enchufes en la cocina
+ *                 example: Estoy interesado en una consulta.
+ *               disponibilidad:
+ *                 type: string
+ *                 example: Lunes a Viernes desde las 18:00
+ *               tarifa:
+ *                 type: string
+ *                 example: $30.000 por sesión
+ *               ciudad:
+ *                 type: string
+ *                 example: Santiago
  *     responses:
  *       201:
  *         description: Usuario creado correctamente
@@ -250,7 +265,7 @@ app.get('/users/search', async (req, res) => {
  *                   example: Usuario creado correctamente
  *                 id:
  *                   type: integer
- *                   example: 4
+ *                   example: 42
  *       400:
  *         description: Faltan campos obligatorios
  *         content:
@@ -270,9 +285,10 @@ app.get('/users/search', async (req, res) => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Error del servidor
+ *                   example: Error en la base de datos
  */
-  app.post('/users', async (req, res) => {
+
+  app.post('/users', authMiddleware, async (req, res) => {
     try {
       const { nombre, teléfono, correo, profesional, mensaje, disponibilidad, tarifa, ciudad } = req.body;
   
@@ -343,7 +359,7 @@ app.get('/users/search', async (req, res) => {
  *                   type: string
  *                   example: Error del servidor
  */
-  app.delete('/users/:id', async (req, res) => {
+  app.delete('/users/:id', authMiddleware, async (req, res) => {
     const { id } = req.params;
   
     try {
@@ -367,14 +383,14 @@ app.get('/users/search', async (req, res) => {
  * @swagger
  * /users/{id}:
  *   put:
- *     summary: Actualiza un usuario
- *     description: Actualiza el usuario especificado por ID.
+ *     summary: Actualizar usuario existente
+ *     tags: [Usuarios]
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: integer
- *         required: true
  *         description: ID del usuario
  *     requestBody:
  *       required: true
@@ -382,27 +398,60 @@ app.get('/users/search', async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - nombre
+ *               - teléfono
+ *               - correo
+ *               - profesional
+ *               - mensaje
+ *               - disponibilidad
+ *               - tarifa
+ *               - ciudad
  *             properties:
  *               nombre:
  *                 type: string
  *                 example: Juan Pérez
+ *               teléfono:
+ *                 type: string
+ *                 example: +56912345678
  *               correo:
  *                 type: string
- *                 example: juan@example.com
- *               telefono:
+ *                 format: email
+ *                 example: juan.perez@email.com
+ *               profesional:
  *                 type: string
- *                 example: Juan Pérez
+ *                 example: Psicólogo
+ *               mensaje:
+ *                 type: string
+ *                 example: Me gustaría reprogramar la cita.
+ *               disponibilidad:
+ *                 type: string
+ *                 example: Martes y Jueves por la tarde
+ *               tarifa:
+ *                 type: string
+ *                 example: $35.000 por sesión
+ *               ciudad:
+ *                 type: string
+ *                 example: Valparaíso
  *     responses:
  *       200:
  *         description: Usuario actualizado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: Usuario actualizado correctamente
  *       400:
- *         description: Faltan campos requeridos
+ *         description: Faltan campos obligatorios
  *       404:
  *         description: Usuario no encontrado
  *       500:
- *         description: Error en el servidor
+ *         description: Error del servidor
  */
-  app.put('/users/:id', async (req, res) => {
+  app.put('/users/:id', authMiddleware, async (req, res) => {
     const { id } = req.params;
     const { nombre, teléfono, correo, profesional, mensaje, disponibilidad, tarifa, ciudad } = req.body;
   
